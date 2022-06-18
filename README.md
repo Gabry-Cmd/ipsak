@@ -1,4 +1,4 @@
-### IP Swiff Army Knife - IPSAK
+### IP Swiss Army Knife - IPSAK
 This programs takes an IP address and outputs all the required informations about it.
 Subnet masks are not supported for now.
 
