@@ -1,9 +1,7 @@
 /*
-IP Swiff Army Knife - IPSAK
+IP Swiss Army Knife - IPSAK
 
 Gabry-Cmd
-IP are inserted from the most significant octet to the least significant one i.e.:
-192.168.1.1 --> first 192 then 168 then 1 and at last 1
 
 This programs takes an IP address and outputs all the required informations about it.
 Subnet masks are not supported for now.
@@ -29,7 +27,8 @@ Printf and scanf vulnerabilities are not covered for now.
 #define IP_ALL      0xffffffff
 
 // takes a char and returns true if it is a digit '0'-'9'
-__always_inline inline int isDigit(char c){
+// note that isdigit() exist in ctype.h
+__attribute__((always_inline)) inline int isDigit(char c){
     if(c >= '0' && c <= '9'){
         return 1;
     }
@@ -74,6 +73,7 @@ int main(int argc, char * argv[])
                 flagsClass = 0,
                 flagsBroadcast = 0,
                 flagsNetmask = 0,
+                flagsNetwork = 0,
                 flagsRange = 0;
 	
 	// reading arguments
@@ -112,6 +112,13 @@ int main(int argc, char * argv[])
             }
             if(out == -1 || out == 0){ out = IP_STD; }
             flagsNetmask |= out;
+        }else if(strcmp(argv[i], "--network") == 0){
+            flagsNetwork |= IP_MSB;
+            if(i+1 < argc){ // network without flags prints STD
+                out = getFlags(argv[i+1]);
+            }
+            if(out == -1 || out == 0){ out = IP_STD; }
+            flagsNetwork |= out;
         }else if(strcmp(argv[i], "--range") == 0){
             flagsRange |= IP_MSB;
             if(i+1 < argc){ // range without flags prints STD
@@ -129,6 +136,7 @@ int main(int argc, char * argv[])
     // some data is required to calculate the others like the broadcast address
     int broadcast = 0;
     int netmask = 0;
+    int network = 0;
     int rangeMin, rangeMax; // ip addresses range
     char class = 0;
 
@@ -138,7 +146,7 @@ int main(int argc, char * argv[])
         goto usage_and_help;
     }
     // Default behaviour (no arguments, only IP)
-    if(ipFound && !flagsIP && !flagsClass && !flagsBroadcast && !flagsNetmask && !flagsRange){
+    if(ipFound && !flagsIP && !flagsClass && !flagsBroadcast && !flagsNetmask && !flagsNetwork && !flagsRange){
         flagsIP = IP_STD | IP_MSB;
         flagsClass = IP_STD | IP_MSB;
         flagsBroadcast = IP_STD | IP_MSB;
@@ -149,7 +157,7 @@ int main(int argc, char * argv[])
         printf("IP\n");
         printDecodedIP(ip, flagsIP);
     }
-    if(flagsClass & IP_MSB || flagsBroadcast & IP_MSB || flagsNetmask & IP_MSB || flagsRange & IP_MSB){
+    if(flagsClass & IP_MSB || flagsBroadcast & IP_MSB || flagsNetmask & IP_MSB || flagsNetwork & IP_MSB || flagsRange & IP_MSB){
         class = getIPClass(ip);
         if(flagsClass & IP_MSB){
             printf("CLASS\t%c\n", class);
@@ -181,6 +189,19 @@ int main(int argc, char * argv[])
         }
         printDecodedIP(netmask, flagsNetmask);
     }
+    if(flagsNetwork & IP_MSB){
+        printf("NETWORK\n");
+        if(class == 'A'){ // A Class
+            network = ip & 0xff000000;
+        } else if(class == 'B'){ // B Class
+            network = ip & 0xffff0000;
+        } else if(class == 'C'){ // C Class
+            network = ip & 0xffffff00;
+        } else{
+            network = ip & 0xffffffff; // behaviour is still to decide
+        }
+        printDecodedIP(network, flagsNetwork);
+    }
     if(flagsRange & IP_MSB){
         // the broadcast and network ips must not be considered in the range
         if(class == 'A'){ // A Class
@@ -209,7 +230,7 @@ int main(int argc, char * argv[])
 
 void usage(){
     puts("Takes and address and returns some informations out of it...");
-    puts("ipsak <address> [--ip|--broadcast|--netmask <flags>][--class]");
+    puts("ipsak <address> [--ip|--broadcast|--netmask|--network|--range <flags>][--class]");
     puts("Flags can be \"sxobiu\" (s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)");
     puts("If no flags are specified everything is printed in standard form (decimal).");
     exit(0);
