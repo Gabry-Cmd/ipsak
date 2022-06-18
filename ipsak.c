@@ -8,7 +8,8 @@ IP are inserted from the most significant octet to the least significant one i.e
 This programs takes an IP address and outputs all the required informations about it.
 Subnet masks are not supported for now.
 
-The default behaviour (no arguments, only IP) is to print everything, have a look at the usage() function for more info.
+The default behaviour (no arguments, only IP) is to print everything in decimal form (STD),
+have a look at the usage() function for more info.
 
 Printf and scanf vulnerabilities are not covered for now.
 */
@@ -20,8 +21,9 @@ Printf and scanf vulnerabilities are not covered for now.
 #define IP_STD      0x00000001  // 's'
 #define IP_HEX      0x00000010  // 'x'
 #define IP_OCT      0x00000100  // 'o'
-#define IP_INT      0x00001000  // 'i'
-#define IP_UINT     0x00010000  // 'u'
+#define IP_BIN      0x00001000  // 'b'
+#define IP_INT      0x00010000  // 'i'
+#define IP_UINT     0x00100000  // 'u'
 #define IP_MSB      0x80000000
 // #define IP_CLASS    0x00100000
 #define IP_ALL      0xffffffff
@@ -137,11 +139,11 @@ int main(int argc, char * argv[])
     }
     // Default behaviour (no arguments, only IP)
     if(ipFound && !flagsIP && !flagsClass && !flagsBroadcast && !flagsNetmask && !flagsRange){
-        flagsIP = IP_ALL;
-        flagsClass = IP_ALL;
-        flagsBroadcast = IP_ALL;
-        flagsNetmask = IP_ALL;
-        flagsRange = IP_ALL;
+        flagsIP = IP_STD | IP_MSB;
+        flagsClass = IP_STD | IP_MSB;
+        flagsBroadcast = IP_STD | IP_MSB;
+        flagsNetmask = IP_STD | IP_MSB;
+        flagsRange = IP_STD | IP_MSB;
     }
     if(flagsIP & IP_MSB){
         printf("IP\n");
@@ -208,7 +210,8 @@ int main(int argc, char * argv[])
 void usage(){
     puts("Takes and address and returns some informations out of it...");
     puts("ipsak <address> [--ip|--broadcast|--netmask <flags>][--class]");
-    puts("flags can be \"sxoiu\" (s-Standard, x-Hexadecimal, o-Octal, i-Integer, u-Unsigned int)");
+    puts("Flags can be \"sxobiu\" (s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)");
+    puts("If no flags are specified everything is printed in standard form (decimal).");
     exit(0);
 }
 
@@ -226,6 +229,8 @@ int getFlags(char * str){
             flags |= IP_HEX;
         }else if(str[i] == 'o'){
             flags |= IP_OCT;
+        }else if(str[i] == 'b'){
+            flags |= IP_BIN;
         }else if(str[i] == 'i'){
             flags |= IP_INT;
         }else if(str[i] == 'u'){
@@ -293,6 +298,16 @@ void printDecodedIP(int ip, int flags){
             printf("%o.", (unsigned char)(ip >> (8*i)));
         }
         printf("\b \n");
+    }
+    if(flags & IP_BIN){
+        printf("BIN\t");
+        for(i=31; i>=0; i--){
+            printf("%d", (unsigned char)(ip >> (i)) & 1);
+            if(i % 8 == 0 && i != 0){
+                putc('.', stdout);
+            }
+        }
+        printf("\n");
     }
     if(flags & IP_STD){
         printf("STD\t");
