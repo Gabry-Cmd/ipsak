@@ -22,9 +22,7 @@ Printf and scanf vulnerabilities are not covered for now.
 #define IP_BIN      0x00001000  // 'b'
 #define IP_INT      0x00010000  // 'i'
 #define IP_UINT     0x00100000  // 'u'
-#define IP_MSB      0x80000000
-// #define IP_CLASS    0x00100000
-#define IP_ALL      0xffffffff
+#define IP_ALL      IP_STD | IP_HEX | IP_OCT | IP_BIN | IP_INT | IP_UINT
 
 // takes a char and returns true if it is a digit '0'-'9'
 // note that isdigit() exist in ctype.h
@@ -92,42 +90,37 @@ int main(int argc, char * argv[])
             usage();
             exit(0);
         }else if(strcmp(argv[i], "--ip") == 0){
-            flagsIP |= IP_MSB;
             if(i+1 < argc){ // ip without flags prints STD
                 out = getFlags(argv[i+1]);
             }
             if(out == -1 || out == 0){ out = IP_STD; }
             flagsIP |= out;
         }else if(strcmp(argv[i], "--broadcast") == 0){
-            flagsBroadcast |= IP_MSB;
             if(i+1 < argc){ // broadcast without flags prints std
                 out = getFlags(argv[i+1]);
             }
             if(out == -1 || out == 0){ out = IP_STD; }
             flagsBroadcast |= out;
         }else if(strcmp(argv[i], "--netmask") == 0){
-            flagsNetmask |= IP_MSB;
             if(i+1 < argc){ // netmask without flags prints STD
                 out = getFlags(argv[i+1]);
             }
             if(out == -1 || out == 0){ out = IP_STD; }
             flagsNetmask |= out;
         }else if(strcmp(argv[i], "--network") == 0){
-            flagsNetwork |= IP_MSB;
             if(i+1 < argc){ // network without flags prints STD
                 out = getFlags(argv[i+1]);
             }
             if(out == -1 || out == 0){ out = IP_STD; }
             flagsNetwork |= out;
         }else if(strcmp(argv[i], "--range") == 0){
-            flagsRange |= IP_MSB;
             if(i+1 < argc){ // range without flags prints STD
                 out = getFlags(argv[i+1]);
             }
             if(out == -1 || out == 0){ out = IP_STD; }
             flagsRange |= out;
         }else if(strcmp(argv[i], "--class") == 0){
-            flagsClass |= IP_MSB;
+            flagsClass |= IP_STD;
         }
     }
 	
@@ -147,23 +140,23 @@ int main(int argc, char * argv[])
     }
     // Default behaviour (no arguments, only IP)
     if(ipFound && !flagsIP && !flagsClass && !flagsBroadcast && !flagsNetmask && !flagsNetwork && !flagsRange){
-        flagsIP = IP_STD | IP_MSB;
-        flagsClass = IP_STD | IP_MSB;
-        flagsBroadcast = IP_STD | IP_MSB;
-        flagsNetmask = IP_STD | IP_MSB;
-        flagsRange = IP_STD | IP_MSB;
+        flagsIP = IP_STD;
+        flagsClass = IP_STD;
+        flagsBroadcast = IP_STD;
+        flagsNetmask = IP_STD;
+        flagsRange = IP_STD;
     }
-    if(flagsIP & IP_MSB){
+    if(flagsIP){
         printf("IP\n");
         printDecodedIP(ip, flagsIP);
     }
-    if(flagsClass & IP_MSB || flagsBroadcast & IP_MSB || flagsNetmask & IP_MSB || flagsNetwork & IP_MSB || flagsRange & IP_MSB){
+    if(flagsClass || flagsBroadcast || flagsNetmask || flagsNetwork || flagsRange){
         class = getIPClass(ip);
-        if(flagsClass & IP_MSB){
+        if(flagsClass){
             printf("CLASS\t%c\n", class);
         }
     }
-    if(flagsBroadcast & IP_MSB){
+    if(flagsBroadcast){
         printf("BROADCAST\n");
         if(class == 'A'){ // A Class
             broadcast = ip | 0x00ffffff;
@@ -176,7 +169,7 @@ int main(int argc, char * argv[])
         }
         printDecodedIP(broadcast, flagsBroadcast);
     }
-    if(flagsNetmask & IP_MSB){
+    if(flagsNetmask){
         printf("NETMASK\n");
         if(class == 'A'){ // A Class
             netmask = 0xff000000;
@@ -189,7 +182,7 @@ int main(int argc, char * argv[])
         }
         printDecodedIP(netmask, flagsNetmask);
     }
-    if(flagsNetwork & IP_MSB){
+    if(flagsNetwork){
         printf("NETWORK\n");
         if(class == 'A'){ // A Class
             network = ip & 0xff000000;
@@ -202,7 +195,7 @@ int main(int argc, char * argv[])
         }
         printDecodedIP(network, flagsNetwork);
     }
-    if(flagsRange & IP_MSB){
+    if(flagsRange){
         // the broadcast and network ips must not be considered in the range
         if(class == 'A'){ // A Class
             rangeMin = (ip & 0xff000000) + 1;
@@ -231,7 +224,7 @@ int main(int argc, char * argv[])
 void usage(){
     puts("Takes and address and returns some informations out of it...");
     puts("ipsak <address> [--ip|--broadcast|--netmask|--network|--range <flags>][--class]");
-    puts("Flags can be \"sxobiu\" (s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)");
+    puts("Flags can be \"asxobiu\" (a-All, s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)");
     puts("If no flags are specified everything is printed in standard form (decimal).");
     exit(0);
 }
@@ -244,7 +237,9 @@ int getFlags(char * str){
         return -1;
     }
     for(i=0; i<strlen(str); i++){
-        if(str[i] == 's'){
+        if(str[i] == 'a'){
+            flags |= IP_ALL;
+        }else if(str[i] == 's'){
             flags |= IP_STD;
         }else if(str[i] == 'x'){
             flags |= IP_HEX;
