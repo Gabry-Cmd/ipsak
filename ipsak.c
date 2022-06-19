@@ -223,7 +223,7 @@ int main(int argc, char * argv[])
 
 void usage(){
     puts("Takes and address and returns some informations out of it...");
-    puts("ipsak <address> [--ip|--broadcast|--netmask|--network|--range <flags>][--class]");
+    puts("ipsak <address> [--ip|--broadcast|--netmask|--network|--range [flags]][--class|--help]");
     puts("Flags can be \"asxobiu\" (a-All, s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)");
     puts("If no flags are specified everything is printed in standard form (decimal).");
     exit(0);
