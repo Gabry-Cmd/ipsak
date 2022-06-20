@@ -9,9 +9,10 @@ The default behaviour (no arguments, only IP) is to print everything in decimal 
 have a look at the usage() function for more info -->
 ```
 Takes and address and returns some informations out of it...
-ipsak <address> [--ip|--broadcast|--netmask|--network|--range [flags]][--class]
+ipsak <address> [--ip|--broadcast|--netmask|--subnetmask|--network|--range [flags]][--class]
 Flags can be "sxobiu" (s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)
 If no flags are specified everything is printed in standard form (decimal).
+If a subnet mask is provided, --ip and --network may return the same result.
 ```
 
 Internally, the addresses are stored in 32 bits integers.
@@ -20,7 +21,7 @@ The most significant octet is in the msb(yte) and the least significant one in t
 Printf and scanf vulnerabilities are not covered for now.
 
 ## Compiling
-Compiling is simple enough, here there are two templates
+Compiling is simple enough, here there are two templates (I'm using gcc 10 or Mingw 8)
 
 Debug
 ```
@@ -31,8 +32,8 @@ Release
 gcc ipsak.c -o bin/ipsak -O3 -s
 ```
 
-## Need Help?
-It would be appreciated (, even when it may not seem like it).
+## Contribution
+I'm going to write the guidelines as soon as possibile, for now:
 You can open an issue on the GitHub issue tracker or open a pull request.
 If you want to make huge modification to the source you may need to consider forking,
 

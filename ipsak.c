@@ -62,8 +62,8 @@ int main(int argc, char * argv[])
 	/* your code */
 	int i, j; // loop counter
 	unsigned char x; // temp variable
-	int ip = 0;
-    unsigned char ipFound = 0;
+	int ip = 0, subnetMask = 0;
+    unsigned char ipFound = 0, subnetMaskFound = 0;
     // the msb is used to know if the info has been requested
     // from the command line, the other bits works accordingly to
     // the IP_* defines of this program
@@ -71,6 +71,7 @@ int main(int argc, char * argv[])
                 flagsClass = 0,
                 flagsBroadcast = 0,
                 flagsNetmask = 0,
+                flagsSubnetMask = 0,
                 flagsNetwork = 0,
                 flagsRange = 0;
 	
@@ -81,7 +82,12 @@ int main(int argc, char * argv[])
         
         if((tempIP = decodeIP(argv[i])) != -1){
             if(ipFound){ // there can only be one ip address
-                goto usage_and_help;
+                if(subnetMaskFound){
+                    goto usage_and_help;
+                }
+                subnetMask = (int)tempIP;
+                subnetMaskFound = 1;
+                continue; // skips the assignment to ip
             }
             ip = (int)tempIP;
             ipFound = 1;
@@ -107,6 +113,12 @@ int main(int argc, char * argv[])
             }
             if(out == -1 || out == 0){ out = IP_STD; }
             flagsNetmask |= out;
+        }else if(strcmp(argv[i], "--subnetmask") == 0){
+            if(i+1 < argc){ // subnetmask without flags prints STD
+                out = getFlags(argv[i+1]);
+            }
+            if(out == -1 || out == 0){ out = IP_STD; }
+            flagsSubnetMask |= out;
         }else if(strcmp(argv[i], "--network") == 0){
             if(i+1 < argc){ // network without flags prints STD
                 out = getFlags(argv[i+1]);
@@ -139,11 +151,12 @@ int main(int argc, char * argv[])
         goto usage_and_help;
     }
     // Default behaviour (no arguments, only IP)
-    if(ipFound && !flagsIP && !flagsClass && !flagsBroadcast && !flagsNetmask && !flagsNetwork && !flagsRange){
+    if(ipFound && !flagsIP && !flagsClass && !flagsBroadcast && !flagsNetmask && !flagsSubnetMask && !flagsNetwork && !flagsRange){
         flagsIP = IP_STD;
         flagsClass = IP_STD;
         flagsBroadcast = IP_STD;
         flagsNetmask = IP_STD;
+        flagsSubnetMask = IP_STD;
         flagsRange = IP_STD;
     }
     if(flagsIP){
@@ -158,7 +171,9 @@ int main(int argc, char * argv[])
     }
     if(flagsBroadcast){
         printf("BROADCAST\n");
-        if(class == 'A'){ // A Class
+        if(subnetMaskFound){
+            broadcast = ip | (~subnetMask);
+        } else if(class == 'A'){ // A Class
             broadcast = ip | 0x00ffffff;
         } else if(class == 'B'){ // B Class
             broadcast = ip | 0x0000ffff;
@@ -182,9 +197,15 @@ int main(int argc, char * argv[])
         }
         printDecodedIP(netmask, flagsNetmask);
     }
+    if(flagsSubnetMask){
+        printf("SUBNET MASK\n");
+        printDecodedIP(subnetMask, flagsSubnetMask);
+    }
     if(flagsNetwork){
         printf("NETWORK\n");
-        if(class == 'A'){ // A Class
+        if(subnetMaskFound){
+            network = ip & subnetMask;
+        } else if(class == 'A'){ // A Class
             network = ip & 0xff000000;
         } else if(class == 'B'){ // B Class
             network = ip & 0xffff0000;
@@ -197,7 +218,14 @@ int main(int argc, char * argv[])
     }
     if(flagsRange){
         // the broadcast and network ips must not be considered in the range
-        if(class == 'A'){ // A Class
+        if(subnetMaskFound){
+            rangeMin = (ip & subnetMask) + 1;
+            rangeMax = (ip | (~subnetMask) - 1);
+            if(subnetMask & 0x00000002){ // if the subnet last octet is 254
+                rangeMin -= 1;
+                rangeMax += 1;
+            }
+        } else if(class == 'A'){ // A Class
             rangeMin = (ip & 0xff000000) + 1;
             rangeMax = (ip & 0xff000000) + 0x00fffffe;
         } else if(class == 'B'){ // B Class
@@ -222,10 +250,11 @@ int main(int argc, char * argv[])
 }
 
 void usage(){
-    puts("Takes and address and returns some informations out of it...");
-    puts("ipsak <address> [--ip|--broadcast|--netmask|--network|--range [flags]][--class|--help]");
-    puts("Flags can be \"asxobiu\" (a-All, s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)");
+    puts("Takes and address and returns some informations out of it...\n");
+    puts("ipsak <address> <subnetmask> [--ip|--broadcast|--netmask|--subnetmask|--network|--range [flags]][--class|--help]\n");
+    puts("Flags can be \"asxobiu\" (a-All, s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int).");
     puts("If no flags are specified everything is printed in standard form (decimal).");
+    puts("If a subnet mask is provided, --ip and --network may return the same result.");
     exit(0);
 }
 
