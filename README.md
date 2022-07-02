@@ -1,7 +1,7 @@
 # IPSAK - IP Swiss Army Knife
 
 ## Purpose
-This programs takes an IP address and outputs all the required informations about it.
+This programs takes an IP address, his subnet mask and output all the required informations (like the class, broadcast and network address etc) about it in various formats (OCT, HEX, DEC etc).
 * **IPv4 addresses and subnet masks are supported.**
 * **CIDR notation for subnet masks and IPv6 addresses are NOT supported for now.**
 * **Supernet masks are NOT EXPLICITLY supported.**
