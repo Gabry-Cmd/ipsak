@@ -54,6 +54,11 @@ int getIPKeyboard();
 // return -1 if error
 int getFlags(char *);
 
+// Validates a ip mask returned by decodeIP()
+// Works with net masks, subnet/supernet masks
+// Returns 1 if valid, 0 otherwise
+int isValidMask(int);
+
 // prints information about the command arguments
 void usage();
 
@@ -86,6 +91,9 @@ int main(int argc, char * argv[])
                     goto usage_and_help;
                 }
                 subnetMask = (int)tempIP;
+                if(!isValidMask(subnetMask)){
+                    goto usage_and_help;
+                }
                 subnetMaskFound = 1;
                 continue; // skips the assignment to ip
             }
@@ -180,7 +188,7 @@ int main(int argc, char * argv[])
         } else if(class == 'C'){ // C Class
             broadcast = ip | 0x000000ff;
         } else{
-            broadcast = 0; // behaviour is still to decide
+            broadcast = 0; // behaviour is still to be decided
         }
         printDecodedIP(broadcast, flagsBroadcast);
     }
@@ -193,7 +201,7 @@ int main(int argc, char * argv[])
         } else if(class == 'C'){ // C Class
             netmask = 0xffffff00;
         } else{
-            netmask = 0xffffffff; // behaviour is still to decide
+            netmask = 0xffffffff; // behaviour is still to be decided
         }
         printDecodedIP(netmask, flagsNetmask);
     }
@@ -212,7 +220,7 @@ int main(int argc, char * argv[])
         } else if(class == 'C'){ // C Class
             network = ip & 0xffffff00;
         } else{
-            network = ip & 0xffffffff; // behaviour is still to decide
+            network = ip & 0xffffffff; // behaviour is still to be decided
         }
         printDecodedIP(network, flagsNetwork);
     }
@@ -221,9 +229,13 @@ int main(int argc, char * argv[])
         if(subnetMaskFound){
             rangeMin = (ip & subnetMask) + 1;
             rangeMax = (ip | (~subnetMask) - 1);
-            if(subnetMask & 0x00000002){ // if the subnet last octet is 254
+            if(subnetMask & 2){ // if last octet is 254
                 rangeMin -= 1;
                 rangeMax += 1;
+            }
+            if(subnetMask & 1){ // if last octet is 255, behaviour is still to be decided
+                rangeMin = 0;
+                rangeMax = 0;
             }
         } else if(class == 'A'){ // A Class
             rangeMin = (ip & 0xff000000) + 1;
@@ -235,7 +247,7 @@ int main(int argc, char * argv[])
             rangeMin = (ip & 0xffffff00) + 1;
             rangeMax = (ip & 0xffffff00) + 0x000000fe;
         } else{
-            rangeMin = 0; // behaviour is still to decide
+            rangeMin = 0; // behaviour is still to be decided
             rangeMax = 0;
         }
         printf("RANGE MIN\n");
@@ -250,12 +262,27 @@ int main(int argc, char * argv[])
 }
 
 void usage(){
-    puts("Takes and address and returns some informations out of it...\n");
+    puts("Takes an IP address and returns some informations out of it...\n");
     puts("ipsak <address> <subnetmask> [--ip|--broadcast|--netmask|--subnetmask|--network|--range [flags]][--class|--help]\n");
     puts("Flags can be \"asxobiu\" (a-All, s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int).");
     puts("If no flags are specified everything is printed in standard form (decimal).");
     puts("If a subnet mask is provided, --ip and --network may return the same result.");
+    puts("RANGE shows the usable ip addresses which don't contain network and broadcast.");
     exit(0);
+}
+
+int isValidMask(int mask){
+    int i, oneFound = 0;
+
+    for(i=0; i<32; i++){ // right to left
+        if((mask >> i) & 1){
+            oneFound = 1;
+        }
+        else if(oneFound){ // if a zero found is next to a one
+            return 0;
+        }
+    }
+    return 1;
 }
 
 int getFlags(char * str){
@@ -325,7 +352,7 @@ void printDecodedIP(int ip, int flags){
     int i;
 
     if(flags & IP_INT){
-        printf("INT\t%d\n", ip);
+        printf("INT\t%d\n", (int)ip);
     }
     if(flags & IP_UINT){
         printf("UINT\t%u\n", ip);
@@ -367,9 +394,8 @@ void printDecodedIP(int ip, int flags){
 
 long long decodeIP(char * str){
     int i, offset = 24; // counters
-    unsigned short octet = 0; // current octet
-    unsigned char x = 0; // temp
-    int ip = 0;
+    long long octet = 0; // current octet
+    long long ip = 0;
 
     // The ip variable is filled left to right
     // The max ip lenght is 16 chars with the terminator
@@ -388,7 +414,7 @@ long long decodeIP(char * str){
     }
 
     if(offset == 0){
-        return (long long)ip;
+        return ip;
     }
     else{
         return -1;
