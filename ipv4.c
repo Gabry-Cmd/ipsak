@@ -216,8 +216,8 @@ void computeAndPrintIpv4(ipv4_t ip, cmdlineflags_t flags, unsigned char subnetMa
     if(flags.range){
         // the broadcast and network ips must not be considered in the range
         if(subnetMaskFound){
-            ip.rangeMin = (ip.address & ip.subnetMask) + 1;
-            ip.rangeMax = (ip.address | (~ip.subnetMask) - 1);
+            ip.rangeMin = (ip.address & ip.subnetMask);
+            ip.rangeMax = (ip.address | (~ip.subnetMask));
             if(ip.subnetMask & 2){ // if last octet is 254
                 ip.rangeMin = ip.network;
                 ip.rangeMax = ip.broadcast;
@@ -227,14 +227,14 @@ void computeAndPrintIpv4(ipv4_t ip, cmdlineflags_t flags, unsigned char subnetMa
                 ip.rangeMax = 0;
             }
         } else if(ip.classIs == 'A'){ // A Class
-            ip.rangeMin = (ip.address & 0xff000000) + 1;
-            ip.rangeMax = (ip.address & 0xff000000) + 0x00fffffe;
+            ip.rangeMin = (ip.address & 0xff000000);
+            ip.rangeMax = (ip.address & 0xff000000) + 0x00ffffff;
         } else if(ip.classIs == 'B'){ // B Class
-            ip.rangeMin = (ip.address & 0xffff0000) + 1;
-            ip.rangeMax = (ip.address & 0xffff0000) + 0x0000fffe;
+            ip.rangeMin = (ip.address & 0xffff0000);
+            ip.rangeMax = (ip.address & 0xffff0000) + 0x0000ffff;
         } else if(ip.classIs == 'C'){ // C Class
-            ip.rangeMin = (ip.address & 0xffffff00) + 1;
-            ip.rangeMax = (ip.address & 0xffffff00) + 0x000000fe;
+            ip.rangeMin = (ip.address & 0xffffff00);
+            ip.rangeMax = (ip.address & 0xffffff00) + 0x000000ff;
         } else{
             ip.rangeMin = 0; // behaviour is still to be decided
             ip.rangeMax = 0;

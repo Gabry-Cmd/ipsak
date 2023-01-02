@@ -15,7 +15,7 @@ ipsak <address> [--ip|--broadcast|--netmask|--subnetmask|--network|--range [flag
 Flags can be "asxobiu" (a-All, s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int)
 If no flags are specified everything is printed in standard form (decimal).
 If a subnet mask is provided, --ip and --network may return the same result.
-RANGE shows the usable ip addresses which don't contain network and broadcast.
+RANGE shows every ip addresses including the network and broadcast ones.
 ```
 
 Internally, the addresses are stored in 32 bits integers.

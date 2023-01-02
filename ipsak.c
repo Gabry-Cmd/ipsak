@@ -152,6 +152,6 @@ void usage(){
     puts("Flags can be \"asxobiu\" (a-All, s-Standard, x-Hexadecimal, o-Octal, b-Binary, i-Integer, u-Unsigned int).");
     puts("If no flags are specified everything is printed in standard form (decimal).");
     puts("If a subnet mask is provided, --ip and --network may return the same result.");
-    puts("RANGE shows the usable ip addresses which don't contain network and broadcast.");
+    puts("RANGE shows every ip addresses including the network and broadcast ones.");
     exit(0);
 }
